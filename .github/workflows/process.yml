@@ -1,0 +1,86 @@
+name: Process Binaries
+
+on: 
+  push
+
+jobs:
+
+  get-movian:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Download archive
+      run: wget --no-check-certificate https://movian.tv/static/ps3dev.tar.gz -O ./ps3dev.tar.gz
+    - name: Repackage archive
+      run: |
+        mkdir ./extracted && cd ./extracted
+        tar -xzf ../ps3dev.tar.gz
+        tar --owner=0 --group=0 -zcf ../ps3dev-movian-xenial.tar.gz *
+    - name: Upload SDK
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-artifact
+        path: ./ps3dev-movian-xenial.tar.gz
+ 
+  get-xerpi:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Download archive
+      run: |
+        wget --no-check-certificate https://github.com/TheAlienDrew/mediafire-direct/raw/main/0-bash-scripts/mediafire-direct.sh -O ./mediafire.sh && chmod +x ./mediafire.sh
+        wget --no-check-certificate $(./mediafire.sh http://www.mediafire.com/?yazdz4sz7sbqe2m) -O ./ps3dev.7z
+    - name: Repackage archive
+      run: |
+        mkdir ./ps3dev-temp && cd ./ps3dev-temp
+        7z x ../ps3dev.7z
+        tar --owner=0 --group=0 -zcf ../ps3dev-xerpi-xenial.tar.gz *
+    - name: Upload SDK
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-artifact
+        path: ./ps3dev-xerpi-xenial.tar.gz
+
+  get-psdk:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Download archives
+      run: |
+        wget --no-check-certificate https://github.com/Estwald/PSDK3v2/raw/master/ps3dev.7z -O ./ps3dev.7z
+        wget --no-check-certificate https://github.com/Estwald/PSDK3v2/raw/master/MinGW.7z -O ./MinGW.7z
+        wget --no-check-certificate https://github.com/wargio/PSDK3v2/tarball/master -O ./psl1ght.tar.gz
+    - name: Repackage archives
+      run: |
+        mkdir ./psdk-temp && cd ./psdk-temp
+        tar --wildcards -xzf ../psl1ght.tar.gz */psl1ght
+        7z x ../ps3dev.7z
+        7z x ../MinGW.7z
+        tar --owner=0 --group=0 -zcvf ../psdk3-estwald-windows.tar.gz *
+    - name: Upload SDK
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-artifact
+        path: ./psdk3-estwald-windows.tar.gz
+    
+
+  generate-release:
+
+    needs: [get-movian, get-xerpi, get-psdk]
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Download all assets
+      uses: actions/download-artifact@v2
+      with:
+        name: release-artifact
+    - name: Get current date
+      id: date
+      run: |
+        echo "::set-output name=date::$(date +'%Y.%m.%d')"
+        echo "::set-output name=time::$(date +'%H%M%S')"
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: "PS3SDK Mirror (${{steps.date.outputs.date}})"
+        body: "- Working pre-compiled SDKs for different operating systems."
+        tag_name: "refs/tags/${{steps.date.outputs.date}}_${{steps.date.outputs.time}}"
+        files: ./*.tar.gz
+        prerelease: false
+
