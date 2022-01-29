@@ -27,7 +27,7 @@ jobs:
     - name: Download archive
       run: |
         wget --no-check-certificate https://github.com/TheAlienDrew/mediafire-direct/raw/main/0-bash-scripts/mediafire-direct.sh -O ./mediafire.sh && chmod +x ./mediafire.sh
-        wget --no-check-certificate $(./mediafire.sh http://www.mediafire.com/?yazdz4sz7sbqe2m) -O ./ps3dev.7z
+        wget --no-check-certificate $(./mediafire.sh https://www.mediafire.com/file/yazdz4sz7sbqe2m/ps3toolchain_and_psl1ght_v2_linux_64.7z/file) -O ./ps3dev.7z
     - name: Repackage archive
       run: |
         mkdir ./ps3dev-temp && cd ./ps3dev-temp
@@ -39,6 +39,25 @@ jobs:
         name: release-artifact
         path: ./ps3dev-xerpi-xenial.tar.gz
 
+  get-cobra:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Download archive
+      run: |
+        wget --no-check-certificate https://github.com/TheAlienDrew/mediafire-direct/raw/main/0-bash-scripts/mediafire-direct.sh -O ./mediafire.sh && chmod +x ./mediafire.sh
+        wget --no-check-certificate $(./mediafire.sh https://www.mediafire.com/file/s88ycf85d0vnshd/PSDK3v2_COBRA.rar/file) -O ./psdk.rar
+    - name: Repackage archive
+      run: |
+        sudo apt -y install libarchive-tools
+        bsdtar -xf ./psdk.rar
+        rm -r PSDK3v2/libraries-src PSDK3v2/project
+        tar --owner=0 --group=0 -zcf ./psdk3-cobra-windows.tar.gz PSDK3v2
+    - name: Upload SDK
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-artifact
+        path: ./psdk3-cobra-windows.tar.gz
+
   get-psdk:
     runs-on: ubuntu-20.04
     steps:
@@ -49,11 +68,11 @@ jobs:
         wget --no-check-certificate https://github.com/wargio/PSDK3v2/tarball/master -O ./psl1ght.tar.gz
     - name: Repackage archives
       run: |
-        mkdir ./psdk-temp && cd ./psdk-temp
+        mkdir ./PSDK3v2 && cd ./PSDK3v2
         tar --wildcards -xzf ../psl1ght.tar.gz */psl1ght
         7z x ../ps3dev.7z
         7z x ../MinGW.7z
-        tar --owner=0 --group=0 -zcvf ../psdk3-estwald-windows.tar.gz *
+        tar --owner=0 --group=0 -zcf ../psdk3-estwald-windows.tar.gz .
     - name: Upload SDK
       uses: actions/upload-artifact@v2
       with:
