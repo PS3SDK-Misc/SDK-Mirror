@@ -48,8 +48,8 @@ jobs:
         wget --no-check-certificate $(./mediafire.sh https://www.mediafire.com/file/s88ycf85d0vnshd/PSDK3v2_COBRA.rar/file) -O ./psdk.rar
     - name: Repackage archive
       run: |
-        sudo apt -y install libarchive-tools
-        bsdtar -xf ./psdk.rar
+        sudo apt -y install unar
+        unar -D ./psdk.rar
         rm -r PSDK3v2/libraries-src PSDK3v2/project
         tar --owner=0 --group=0 -zcf ./psdk3-cobra-windows.tar.gz PSDK3v2
     - name: Upload SDK
@@ -82,7 +82,7 @@ jobs:
 
   generate-release:
 
-    needs: [get-movian, get-xerpi, get-psdk]
+    needs: [get-movian, get-xerpi, get-cobra, get-psdk]
     runs-on: ubuntu-20.04
     steps:
     - name: Download all assets
